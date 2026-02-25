@@ -1,34 +1,95 @@
-na ultima seção vimos que podemos criar uma baseline usando o sagemaker model monitor e agora queremos ver como podemos prgramar nosso model monitor de modo que ele esteja apenas pegando os dados que foram enviados ao nosso endpont para inferencia e analisando se alguma restrição foi violada
+# SageMaker Model Monitor — Agendando monitoramento com Monitoring Schedule
 
+Na última seção, vimos que podemos criar uma **baseline** usando o **SageMaker Model Monitor**.  
+Agora, queremos ver como **programar o monitoramento** para que ele analise continuamente os dados enviados ao endpoint de inferência e verifique se alguma **restrição foi violada**.
 
-01 - vamos criar nosso agendamento de monitoramento ultilizando o monitor que criamos anteriormente
+A ideia aqui é monitorar **qualidade e consistência dos dados de entrada**, e não apenas olhar o resultado final da previsão.
 
-lembre-se de sempre debuggar o código e ler documentações para começarmos a entender cada linha de configuração, mas aqui basicamente criamos o schedule e passamos nossas statisticas e restições do nosso baseline e especificamos, é claro, o endpoint crado anteriormente.
+---
 
-00
+## Objetivo desta etapa
 
+Nesta etapa, vamos:
 
-02 - aqui invocaremos nosso modelo no qual geraremos aprenas algum tipo de dados de amostra, não passando a coluna "education", ou seja, essa amostra não faz parte da nossa inferência, e é exatamente o que queremos observar pelo monitor, pois mesmo sem essa coluna, os resultados podem ser gerados, porem talves não seja uma qualidade de dados tão boa , portanto não perceberiamos isso pelos resultados, e queremos que sejamos abvisados caso algum dado falte.
+- criar um **agendamento de monitoramento** (monitoring schedule)
+- reutilizar o **monitor** e a **baseline** criados anteriormente
+- enviar dados de inferência com uma inconsistência proposital
+- verificar se o monitor detecta a violação
+- analisar o relatório gerado
+- parar/deletar o agendamento para evitar custos
 
-01
+---
 
-nas celulas seguintes podemos ver o status do nosso agendamento, a quantidade que foi rodada e o ultimo agendamento executado. lembrando que o nosso agendamente foi programado para a cada 1 hora, então é necessário esperar 1 hora para que a primeira execução seja realizada, no meu caso, já tenho duas execuções
+## 01 - Criando o agendamento de monitoramento
 
-você pode acompanhar as execuções na aba "processing jobs" no painel do SageMaker
+Vamos criar o **monitoring schedule** utilizando o monitor que criamos anteriormente.
 
-02
+> Lembre-se de sempre debugar o código e consultar a documentação para entender cada linha de configuração.
 
-03 - podemos observar os resultados no nosso buckt, mas tambem podemos baixalos 
+Nesta etapa, basicamente:
 
-04
-03
+- criamos o **schedule**
+- passamos os arquivos de **estatísticas** e **restrições** da baseline
+- informamos o **endpoint** criado anteriormente
+- definimos a frequência de execução (ex.: a cada 1 hora)
 
-e veremos nosso relátorio de violação, no qual temos no dataset atual 8 colunas, porem no nosso arquivo de violção esperamos 9
+!
 
-"current dataset: 8, Number of columns in baseline constraints: 9"
+---
 
-05
+## 02 - Gerando inferência com dado inconsistente (teste do monitor)
 
-03 - e por fim, parea evitar custos, paramos e deletaremos nosso monitor schedule
+Agora vamos invocar nosso modelo com uma amostra propositalmente inconsistente.
 
-06
+Neste exemplo, enviaremos dados **sem a coluna `education`**.
+
+Ou seja:
+
+- a inferência ainda pode gerar resultado
+- porém os dados de entrada não estão no mesmo padrão do treinamento
+
+Esse é exatamente o tipo de problema que queremos que o monitor detecte.
+
+Mesmo com previsão sendo retornada, a **qualidade dos dados pode estar ruim**, e queremos ser avisados quando isso acontecer.
+
+!
+
+---
+
+## 03 - Acompanhando as execuções do schedule
+
+Nas células seguintes, podemos verificar informações como:
+
+- status do agendamento
+- quantidade de execuções realizadas
+- última execução do schedule
+
+Como o agendamento foi configurado para rodar **a cada 1 hora**, é necessário aguardar esse intervalo para a primeira execução.
+
+No seu caso, você comentou que já existem duas execuções.
+
+Também é possível acompanhar essas execuções na aba:
+
+- **SageMaker -> Processing Jobs**
+
+!
+
+---
+
+## 04 - Verificando os resultados e relatório de violação
+
+Podemos observar os resultados no bucket S3 e também fazer o download dos arquivos gerados.
+
+!
+
+!
+
+Ao abrir o relatório de violação, veremos a inconsistência detectada:
+
+- no dataset atual chegaram **8 colunas**
+- mas nas restrições da baseline eram esperadas **9 colunas**
+
+Exemplo de mensagem:
+
+```text
+current dataset: 8, Number of columns in baseline constraints: 9
